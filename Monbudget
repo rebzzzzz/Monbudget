@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 MonBudget</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+--vf:#2d7a56; --vm:#4aaa78; --vc:#b8e8cc; --vp:#e8f7ef; --blanc:#fafffe;
+--gris:#f0f7f3; --texte:#1a3a2a; --tl:#5a8070; --rouge:#e07070; --orange:#f0a040;
+--shadow:0 4px 24px rgba(45,122,86,.10); --r:20px; --rs:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--vp);color:var(--texte);min-height:100vh;}
+header{background:linear-gradient(135deg,var(--vf),var(--vm));padding:20px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(45,122,86,.25);}
+.header-left h1{font-family:'Playfair Display',serif;font-size:1.6rem;color:white;font-weight:700;}
+.header-left p{color:rgba(255,255,255,.7);font-size:.8rem;margin-top:2px;}
+nav{display:flex;gap:4px;padding:16px 24px 0;background:var(--blanc);border-bottom:2px solid rgba(126,200,160,.2);overflow-x:auto;}
+.tab{padding:9px 16px;border-radius:var(--rs) var(--rs) 0 0;cursor:pointer;font-size:.85rem;font-weight:500;color:var(--tl);border:none;background:transparent;transition:all .2s;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;}
+.tab.active{color:var(--vf);background:var(--vp);border-bottom:3px solid var(--vf);font-weight:600;}
+.tab:hover:not(.active){color:var(--vm);background:var(--gris);}
+main{padding:20px 24px;max-width:900px;margin:0 auto;}
+.page{display:none;}.page.active{display:block;}
+.spacer{height:20px;}
+.comptes-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.compte-card{border-radius:var(--r);padding:20px 24px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.compte-revolut{background:linear-gradient(135deg,#191c1f,#2d3748);color:white;}
+.compte-postale{background:linear-gradient(135deg,#e8a800,#ffd740);color:#1a1a1a;}
+.compte-label{font-size:.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;opacity:.7;margin-bottom:6px;}
+.compte-nom{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:12px;}
+.compte-solde{font-size:1.8rem;font-weight:700;letter-spacing:-1px;}
+.compte-solde.negatif{color:#ff6b6b;}
+.compte-bas{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+.compte-dep-jour{font-size:.78rem;opacity:.75;}
+.btn-init{font-size:.72rem;padding:3px 10px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:transparent;color:rgba(255,255,255,.8);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.btn-init-postale{border-color:rgba(0,0,0,.25);color:rgba(0,0,0,.6);}
+.btn-init:hover{background:rgba(255,255,255,.15);}
+.alerte-rouge{position:absolute;top:12px;right:12px;background:#ff4444;color:white;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+.total-card{background:linear-gradient(135deg,var(--vf),var(--vm));border-radius:var(--r);padding:18px 24px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;box-shadow:var(--shadow);}
+.total-label{font-size:.82rem;opacity:.8;margin-bottom:3px;}
+.total-montant{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;}
+.total-right{text-align:right;}
+.badge-white{background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:500;}
+.saisie-card{background:var(--blanc);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);margin-bottom:20px;}
+.section-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;color:var(--vf);margin-bottom:14px;}
+.saisie-row1{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.saisie-row2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;}
+.field label{display:block;font-size:.72rem;font-weight:600;color:var(--tl);letter-spacing:.5px;margin-bottom:5px;text-transform:uppercase;}
+.field input,.field select{width:100%;padding:11px 14px;border:2px solid var(--vc);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--texte);background:var(--vp);outline:none;transition:border-color .2s;color-scheme:light;}
+.field input:focus,.field select:focus{border-color:var(--vm);background:white;}
+.toggle-type{display:flex;border-radius:var(--rs);overflow:hidden;border:2px solid var(--vc);height:43px;}
+.toggle-type button{flex:1;border:none;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .2s;background:var(--vp);color:var(--tl);}
+.toggle-type button.active-debit{background:var(--rouge);color:white;}
+.toggle-type button.active-credit{background:var(--vm);color:white;}
+.btn-ajouter{flex:1;padding:12px;background:linear-gradient(135deg,var(--vf),var(--vm));color:white;border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .15s;width:100%;}
+.btn-ajouter:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(45,122,86,.3);}
+.transactions-card{background:var(--blanc);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);margin-bottom:20px;}
+.filtres{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.filtre-btn{padding:5px 12px;border-radius:20px;border:2px solid var(--vc);background:transparent;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;color:var(--tl);cursor:pointer;transition:all .15s;}
+.filtre-btn.active,.filtre-btn:hover{background:var(--vf);border-color:var(--vf);color:white;}
+.t-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--rs);margin-bottom:6px;transition:background .15s;border-left:3px solid transparent;}
+.t-item:hover{background:var(--vp);}
+.t-item.revolut{border-left-color:#555;}
+.t-item.postale{border-left-color:#e8a800;}
+.t-emoji{font-size:1.3rem;width:38px;height:38px;background:var(--gris);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.t-info{flex:1;min-width:0;}
+.t-nom{font-weight:500;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-meta{font-size:.75rem;color:var(--tl);margin-top:2px;}
+.t-cat{font-size:.68rem;padding:1px 7px;border-radius:8px;background:var(--gris);color:var(--tl);margin-left:5px;font-weight:500;}
+.t-droite{display:flex;align-items:center;gap:8px;}
+.t-montant{font-weight:700;font-size:1rem;color:var(--rouge);white-space:nowrap;}
+.t-montant.credit{color:var(--vm);}
+.t-actions{display:flex;gap:4px;}
+.t-btn{background:none;border:none;cursor:pointer;font-size:.9rem;padding:4px 6px;border-radius:6px;transition:background .15s;color:#bbb;}
+.t-btn:hover{background:var(--vp);color:var(--texte);}
+.empty-state{text-align:center;padding:36px;color:var(--tl);}
+.empty-state .emoji{font-size:2.5rem;margin-bottom:10px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:var(--r);padding:24px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal h3{font-family:'Playfair Display',serif;color:var(--vf);margin-bottom:16px;}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.modal-actions{display:flex;gap:10px;margin-top:16px;}
+.btn-save{flex:1;padding:11px;background:linear-gradient(135deg,var(--vf),var(--vm));color:white;border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;}
+.btn-cancel{padding:11px 18px;background:var(--gris);border:none;border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;color:var(--tl);}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--blanc);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);border-top:4px solid var(--vc);}
+.stat-label{font-size:.72rem;color:var(--tl);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.stat-valeur{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--vf);}
+.stat-sous{font-size:.75rem;color:var(--tl);margin-top:3px;}
+.chart-card{background:var(--blanc);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);margin-bottom:16px;}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:8px 0;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--vm),var(--vf));min-height:4px;transition:height .4s cubic-bezier(.4,2,.6,1);}
+.bar-label{font-size:.65rem;color:var(--tl);}
+.bar-val{font-size:.62rem;color:var(--vf);font-weight:600;}
+.cats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cat-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--gris);border-radius:var(--rs);}
+.cat-emoji{font-size:1.2rem;}
+.cat-info{flex:1;}
+.cat-nom{font-size:.82rem;font-weight:600;}
+.cat-montant{font-size:.78rem;color:var(--tl);}
+.cat-bar-bg{height:4px;background:#ddd;border-radius:2px;margin-top:4px;}
+.cat-bar-fill{height:100%;background:var(--vm);border-radius:2px;transition:width .5s;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--vf);color:white;padding:12px 20px;border-radius:var(--rs);font-size:.88rem;font-weight:500;box-shadow:0 8px 24px rgba(45,122,86,.35);transform:translateY(80px);opacity:0;transition:all .3s cubic-bezier(.4,2,.6,1);z-index:200;}
+.toast.show{transform:translateY(0);opacity:1;}
+.init-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;}
+.init-modal.open{display:flex;}
+@media(max-width:600px){
+main{padding:14px;}
+.comptes-grid{grid-template-columns:1fr;}
+.saisie-row1,.saisie-row2{grid-template-columns:1fr;}
+.stats-grid{grid-template-columns:1fr 1fr;}
+.cats-grid{grid-template-columns:1fr;}
+.modal-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header>
+<div class="header-left">
+<h1>🌿 MonBudget</h1>
+<p id="date-header"></p>
+</div>
+<div style="font-size:1.8rem">💰</div>
+</header>
+
+<nav>
+<button class="tab active" onclick="showPage('dashboard')">🏠 Accueil</button>
+<button class="tab" onclick="showPage('transactions')">📋 Dépenses</button>
+<button class="tab" onclick="showPage('stats')">📊 Stats</button>
+</nav>
+
+<main>
+
+<div class="page active" id="page-dashboard">
+<div class="spacer"></div>
+<div class="comptes-grid">
+<div class="compte-card compte-revolut" id="card-revolut">
+<div class="compte-label">Compte 1</div>
+<div class="compte-nom">💳 Revolut</div>
+<div class="compte-solde" id="solde-revolut">0,00 €</div>
+<div class="compte-bas">
+<div class="compte-dep-jour" id="dep-revolut-jour">Aujourd'hui : 0,00 €</div>
+<button class="btn-init" onclick="ouvrirInitSolde('revolut')">✏️ Solde réel</button>
+</div>
+</div>
+<div class="compte-card compte-postale" id="card-postale">
+<div class="compte-label">Compte 2</div>
+<div class="compte-nom">🏦 Banque Postale</div>
+<div class="compte-solde" id="solde-postale">0,00 €</div>
+<div class="compte-bas">
+<div class="compte-dep-jour" id="dep-postale-jour">Aujourd'hui : 0,00 €</div>
+<button class="btn-init btn-init-postale" onclick="ouvrirInitSolde('postale')">✏️ Solde réel</button>
+</div>
+</div>
+</div>
+<div class="total-card">
+<div>
+<div class="total-label">💼 Solde total</div>
+<div class="total-montant" id="solde-total">0,00 €</div>
+</div>
+<div class="total-right">
+<div class="total-label" style="margin-bottom:6px">Dépenses aujourd'hui</div>
+<div class="badge-white" id="dep-total-jour">0,00 €</div>
+</div>
+</div>
+<div class="saisie-card">
+<div class="section-title">✏️ Ajouter une transaction</div>
+<div class="saisie-row1">
+<div class="field" style="grid-column:1/-1">
+<label>Description</label>
+<input type="text" id="desc" placeholder="Ex: Courses Lidl, Salaire..." onkeydown="if(event.key==='Enter') ajouterDepense()">
+</div>
+</div>
+<div class="saisie-row2">
+<div class="field">
+<label>📅 Date</label>
+<input type="date" id="date-saisie">
+</div>
+<div class="field">
+<label>Montant (€)</label>
+<input type="number" id="montant" placeholder="0,00" step="0.01" min="0">
+</div>
+<div class="field">
+<label>Catégorie</label>
+<select id="categorie">
+<option value="courses">🛒 Courses</option>
+<option value="resto">🍽️ Restaurant</option>
+<option value="transport">🚌 Transport</option>
+<option value="logement">🏠 Logement</option>
+<option value="sante">💊 Santé</option>
+<option value="vetements">👗 Vêtements</option>
+<option value="loisirs">🎮 Loisirs</option>
+<option value="livraison">🍕 Livraison</option>
+<option value="virement">💸 Virement</option>
+<option value="salaire">💼 Salaire/Entrée</option>
+<option value="autre">💳 Autre</option>
+</select>
+</div>
+</div>
+<div class="saisie-row2" style="margin-bottom:14px">
+<div class="field">
+<label>Compte</label>
+<select id="compte">
+<option value="revolut">💳 Revolut</option>
+<option value="postale">🏦 Banque Postale</option>
+</select>
+</div>
+<div class="field">
+<label>Type</label>
+<div class="toggle-type">
+<button id="btn-debit" class="active-debit" onclick="setType('debit')">− Dépense</button>
+<button id="btn-credit" onclick="setType('credit')">+ Entrée</button>
+</div>
+</div>
+<div class="field" style="display:flex;align-items:flex-end">
+<button class="btn-ajouter" onclick="ajouterDepense()">+ Ajouter</button>
+</div>
+</div>
+</div>
+<div class="transactions-card">
+<div class="section-title" style="margin-bottom:6px">🕐 Dernières transactions</div>
+<div class="filtres">
+<button class="filtre-btn active" onclick="filtrer('tous',this)">Tous</button>
+<button class="filtre-btn" onclick="filtrer('revolut',this)">Revolut</button>
+<button class="filtre-btn" onclick="filtrer('postale',this)">Postale</button>
+<button class="filtre-btn" onclick="filtrer('debit',this)">Dépenses</button>
+<button class="filtre-btn" onclick="filtrer('credit',this)">Entrées</button>
+</div>
+<div id="liste-transactions"></div>
+</div>
+</div>
+
+<div class="page" id="page-transactions">
+<div class="spacer"></div>
+<div class="transactions-card">
+<div class="section-title" style="margin-bottom:6px">📋 Toutes les transactions</div>
+<div class="filtres">
+<button class="filtre-btn active" onclick="filtrer2('tous',this)">Tous</button>
+<button class="filtre-btn" onclick="filtrer2('revolut',this)">Revolut</button>
+<button class="filtre-btn" onclick="filtrer2('postale',this)">Postale</button>
+<button class="filtre-btn" onclick="filtrer2('debit',this)">Dépenses</button>
+<button class="filtre-btn" onclick="filtrer2('credit',this)">Entrées</button>
+<button class="filtre-btn" onclick="filtrer2('courses',this)">🛒</button>
+<button class="filtre-btn" onclick="filtrer2('resto',this)">🍽️</button>
+<button class="filtre-btn" onclick="filtrer2('transport',this)">🚌</button>
+<button class="filtre-btn" onclick="filtrer2('logement',this)">🏠</button>
+<button class="filtre-btn" onclick="filtrer2('loisirs',this)">🎮</button>
+<button class="filtre-btn" onclick="filtrer2('livraison',this)">🍕</button>
+</div>
+<div id="liste-toutes"></div>
+</div>
+<div style="text-align:center;padding:10px">
+<button onclick="resetTotal()" style="background:none;border:2px solid var(--rouge);color:var(--rouge);padding:8px 20px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;font-weight:600;">🗑️ Tout remettre à zéro</button>
+</div>
+</div>
+
+<div class="page" id="page-stats">
+<div class="spacer"></div>
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-label">Dépensé ce mois</div>
+<div class="stat-valeur" id="stat-mois">0 €</div>
+<div class="stat-sous" id="stat-mois-nb">0 transactions</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Moyenne / jour</div>
+<div class="stat-valeur" id="stat-moy">0 €</div>
+<div class="stat-sous">Ce mois-ci</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Plus grosse dépense</div>
+<div class="stat-valeur" id="stat-max">0 €</div>
+<div class="stat-sous" id="stat-max-desc">—</div>
+</div>
+</div>
+<div class="chart-card">
+<div class="section-title">📈 7 derniers jours</div>
+<div class="bar-chart" id="bar-chart"></div>
+</div>
+<div class="chart-card">
+<div class="section-title">🗂️ Par catégorie</div>
+<div class="cats-grid" id="cats-grid"></div>
+</div>
+<div class="chart-card">
+<div class="section-title">⚖️ Répartition par compte</div>
+<div style="display:flex;flex-direction:column;gap:14px;padding:8px 0">
+<div>
+<div style="display:flex;justify-content:space-between;margin-bottom:6px">
+<span style="font-size:.85rem;font-weight:600">💳 Revolut</span>
+<span id="pct-revolut" style="font-size:.85rem;color:var(--tl)">0%</span>
+</div>
+<div style="background:var(--gris);border-radius:6px;height:10px;overflow:hidden">
+<div id="bar-revolut" style="height:100%;background:#2d3748;border-radius:6px;transition:width .5s;width:0%"></div>
+</div>
+</div>
+<div>
+<div style="display:flex;justify-content:space-between;margin-bottom:6px">
+<span style="font-size:.85rem;font-weight:600">🏦 Banque Postale</span>
+<span id="pct-postale" style="font-size:.85rem;color:var(--tl)">0%</span>
+</div>
+<div style="background:var(--gris);border-radius:6px;height:10px;overflow:hidden">
+<div id="bar-postale" style="height:100%;background:#e8a800;border-radius:6px;transition:width .5s;width:0%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</main>
+
+<div class="modal-overlay" id="modal-edit">
+<div class="modal">
+<h3>✏️ Modifier</h3>
+<input type="hidden" id="edit-id">
+<div style="margin-bottom:10px">
+<div class="field">
+<label>Description</label>
+<input type="text" id="edit-desc">
+</div>
+</div>
+<div class="modal-grid">
+<div class="field">
+<label>Date</label>
+<input type="date" id="edit-date">
+</div>
+<div class="field">
+<label>Montant (€)</label>
+<input type="number" id="edit-montant" step="0.01" min="0">
+</div>
+<div class="field">
+<label>Catégorie</label>
+<select id="edit-categorie">
+<option value="courses">🛒 Courses</option>
+<option value="resto">🍽️ Restaurant</option>
+<option value="transport">🚌 Transport</option>
+<option value="logement">🏠 Logement</option>
+<option value="sante">💊 Santé</option>
+<option value="vetements">👗 Vêtements</option>
+<option value="loisirs">🎮 Loisirs</option>
+<option value="livraison">🍕 Livraison</option>
+<option value="virement">💸 Virement</option>
+<option value="salaire">💼 Salaire/Entrée</option>
+<option value="autre">💳 Autre</option>
+</select>
+</div>
+<div class="field">
+<label>Compte</label>
+<select id="edit-compte">
+<option value="revolut">💳 Revolut</option>
+<option value="postale">🏦 Banque Postale</option>
+</select>
+</div>
+</div>
+<div class="field" style="margin-bottom:4px">
+<label>Type</label>
+<div class="toggle-type">
+<button id="edit-btn-debit" class="active-debit" onclick="setEditType('debit')">− Dépense</button>
+<button id="edit-btn-credit" onclick="setEditType('credit')">+ Entrée</button>
+</div>
+</div>
+<div class="modal-actions">
+<button class="btn-cancel" onclick="fermerModal()">Annuler</button>
+<button class="btn-save" onclick="sauvegarderEdit()">✅ Enregistrer</button>
+</div>
+</div>
+</div>
+
+<div class="init-modal" id="modal-init">
+<div class="modal">
+<h3 id="init-titre">💰 Solde actuel</h3>
+<p style="font-size:.85rem;color:var(--tl);margin-bottom:16px">Entre le solde réel de ton compte.</p>
+<input type="hidden" id="init-compte">
+<div class="field" style="margin-bottom:16px">
+<label>Solde actuel (€)</label>
+<input type="number" id="init-solde" step="0.01" placeholder="Ex: 180.59">
+</div>
+<div class="modal-actions">
+<button class="btn-cancel" onclick="fermerInitModal()">Annuler</button>
+<button class="btn-save" onclick="appliquerInitSolde()">✅ Appliquer</button>
+</div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+const SK='mb_v3_tx';
+const SS='mb_v3_soldes';
+let transactions=JSON.parse(localStorage.getItem(SK)||'[]');
+let soldes=JSON.parse(localStorage.getItem(SS)||'{"revolut":0,"postale":0}');
+let filtre1='tous';
+let filtre2='tous';
+let typeActuel='debit';
+let editTypeActuel='debit';
+const CATS={
+courses:{emoji:'🛒',label:'Courses'},
+resto:{emoji:'🍽️',label:'Restaurant'},
+transport:{emoji:'🚌',label:'Transport'},
+logement:{emoji:'🏠',label:'Logement'},
+sante:{emoji:'💊',label:'Santé'},
+vetements:{emoji:'👗',label:'Vêtements'},
+loisirs:{emoji:'🎮',label:'Loisirs'},
+livraison:{emoji:'🍕',label:'Livraison'},
+virement:{emoji:'💸',label:'Virement'},
+salaire:{emoji:'💼',label:'Salaire'},
+autre:{emoji:'💳',label:'Autre'},
+};
+function save(){localStorage.setItem(SK,JSON.stringify(transactions));localStorage.setItem(SS,JSON.stringify(soldes));}
+function fmt(d){return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtM(m){return Math.abs(m).toFixed(2).replace('.',',')+' €';}
+function showPage(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+document.getElementById('page-'+id).classList.add('active');
+['dashboard','transactions','stats'].forEach((p,i)=>{if(p===id)document.querySelectorAll('.tab')[i].classList.add('active');});
+if(id==='stats')renderStats();
+renderAll();
+}
+function setType(t){
+typeActuel=t;
+document.getElementById('btn-debit').className=t==='debit'?'active-debit':'';
+document.getElementById('btn-credit').className=t==='credit'?'active-credit':'';
+}
+function setEditType(t){
+editTypeActuel=t;
+document.getElementById('edit-btn-debit').className=t==='debit'?'active-debit':'';
+document.getElementById('edit-btn-credit').className=t==='credit'?'active-credit':'';
+}
+function ajouterDepense(){
+const desc=document.getElementById('desc').value.trim();
+const montant=parseFloat(document.getElementById('montant').value);
+const compte=document.getElementById('compte').value;
+const dateVal=document.getElementById('date-saisie').value;
+const cat=document.getElementById('categorie').value;
+if(!desc||isNaN(montant)||montant<=0){toast('⚠️ Remplis description et montant !');return;}
+const dateISO=dateVal?new Date(dateVal+'T12:00:00').toISOString():new Date().toISOString();
+const t={id:Date.now(),desc,montant,compte,date:dateISO,type:typeActuel,cat};
+transactions.unshift(t);
+if(typeActuel==='debit')soldes[compte]-=montant;
+else soldes[compte]+=montant;
+save();
+document.getElementById('desc').value='';
+document.getElementById('montant').value='';
+renderAll();
+const da=dateVal?new Date(dateVal+'T12:00:00').toLocaleDateString('fr-FR'):"aujourd'hui";
+toast((typeActuel==='debit'?'💸 Dépense':'💚 Entrée')+' ajoutée — '+da);
+}
+function supprimerTransaction(id){
+const t=transactions.find(x=>x.id===id);
+if(!t)return;
+if(confirm('Supprimer "'+t.desc+'" ?')){
+if(t.type==='debit')soldes[t.compte]+=t.montant;
+else soldes[t.compte]-=t.montant;
+transactions=transactions.filter(x=>x.id!==id);
+save();renderAll();
+toast('🗑️ Supprimée');
+}
+}
+function ouvrirEdit(id){
+const t=transactions.find(x=>x.id===id);
+if(!t)return;
+document.getElementById('edit-id').value=t.id;
+document.getElementById('edit-desc').value=t.desc;
+document.getElementById('edit-montant').value=t.montant;
+document.getElementById('edit-compte').value=t.compte;
+document.getElementById('edit-categorie').value=t.cat||'autre';
+document.getElementById('edit-date').value=new Date(t.date).toISOString().split('T')[0];
+editTypeActuel=t.type;
+setEditType(t.type);
+document.getElementById('modal-edit').classList.add('open');
+}
+function fermerModal(){document.getElementById('modal-edit').classList.remove('open');}
+function sauvegarderEdit(){
+const id=parseInt(document.getElementById('edit-id').value);
+const t=transactions.find(x=>x.id===id);
+if(!t)return;
+if(t.type==='debit')soldes[t.compte]+=t.montant;
+else soldes[t.compte]-=t.montant;
+t.desc=document.getElementById('edit-desc').value.trim();
+t.montant=parseFloat(document.getElementById('edit-montant').value);
+t.compte=document.getElementById('edit-compte').value;
+t.cat=document.getElementById('edit-categorie').value;
+t.type=editTypeActuel;
+const dv=document.getElementById('edit-date').value;
+t.date=dv?new Date(dv+'T12:00:00').toISOString():t.date;
+if(t.type==='debit')soldes[t.compte]-=t.montant;
+else soldes[t.compte]+=t.montant;
+transactions.sort((a,b)=>new Date(b.date)-new Date(a.date));
+save();fermerModal();renderAll();
+toast('✅ Modifiée !');
+}
+function ouvrirInitSolde(compte){
+document.getElementById('init-compte').value=compte;
+document.getElementById('init-titre').textContent=compte==='revolut'?'💳 Solde Revolut':'🏦 Solde Banque Postale';
+document.getElementById('init-solde').value=soldes[compte].toFixed(2);
+document.getElementById('modal-init').classList.add('open');
+}
+function fermerInitModal(){document.getElementById('modal-init').classList.remove('open');}
+function appliquerInitSolde(){
+const compte=document.getElementById('init-compte').value;
+const val=parseFloat(document.getElementById('init-solde').value);
+if(isNaN(val)){toast('⚠️ Montant invalide');return;}
+soldes[compte]=val;
+save();fermerInitModal();renderAll();
+toast('✅ Solde mis à jour !');
+}
+function resetTotal(){
+if(!confirm('Tout supprimer ?'))return;
+transactions=[];soldes={revolut:0,postale:0};
+save();renderAll();
+toast('🌿 Remis à zéro !');
+}
+function filtrer(f,btn){
+filtre1=f;
+document.querySelectorAll('#page-dashboard .filtre-btn').forEach(b=>b.classList.remove('active'));
+if(btn)btn.classList.add('active');
+renderListe('liste-transactions',filtre1);
+}
+function filtrer2(f,btn){
+filtre2=f;
+document.querySelectorAll('#page-transactions .filtre-btn').forEach(b=>b.classList.remove('active'));
+if(btn)btn.classList.add('active');
+renderListe('liste-toutes',filtre2);
+}
+function applyFilter(list,f){
+if(f==='tous')return list;
+if(f==='revolut'||f==='postale')return list.filter(t=>t.compte===f);
+if(f==='debit'||f==='credit')return list.filter(t=>t.type===f);
+return list.filter(t=>t.cat===f);
+}
+function renderListe(elId,f){
+const el=document.getElementById(elId);
+if(!el)return;
+const sorted=[...transactions].sort((a,b)=>new Date(b.date)-new Date(a.date));
+const filtered=applyFilter(sorted,f);
+if(filtered.length===0){el.innerHTML='<div class="empty-state"><div class="emoji">🌱</div><div>Aucune transaction</div></div>';return;}
+el.innerHTML=filtered.map(t=>{
+const cat=CATS[t.cat]||CATS.autre;
+return '<div class="t-item '+t.compte+'">'+
+'<div class="t-emoji">'+cat.emoji+'</div>'+
+'<div class="t-info">'+
+'<div class="t-nom">'+t.desc+'<span class="t-cat">'+cat.label+'</span></div>'+
+'<div class="t-meta">'+fmt(t.date)+' · <span style="font-size:.7rem;padding:1px 6px;border-radius:6px;background:'+(t.compte==='revolut'?'#2d3748':'#ffcc00')+';color:'+(t.compte==='revolut'?'white':'#1a1a1a')+'">'+(t.compte==='revolut'?'Revolut':'Postale')+'</span></div>'+
+'</div>'+
+'<div class="t-droite">'+
+'<div class="t-montant '+(t.type==='credit'?'credit':'')+'">'+(t.type==='credit'?'+':'-')+fmtM(t.montant)+'</div>'+
+'<div class="t-actions">'+
+'<button class="t-btn" onclick="ouvrirEdit('+t.id+')">✏️</button>'+
+'<button class="t-btn" onclick="supprimerTransaction('+t.id+')">🗑️</button>'+
+'</div>'+
+'</div>'+
+'</div>';
+}).join('');
+}
+function renderComptes(){
+const auj=new Date().toDateString();
+const depR=transactions.filter(t=>t.compte==='revolut'&&t.type==='debit'&&new Date(t.date).toDateString()===auj).reduce((s,t)=>s+t.montant,0);
+const depP=transactions.filter(t=>t.compte==='postale'&&t.type==='debit'&&new Date(t.date).toDateString()===auj).reduce((s,t)=>s+t.montant,0);
+const srEl=document.getElementById('solde-revolut');
+const spEl=document.getElementById('solde-postale');
+srEl.textContent=soldes.revolut.toFixed(2).replace('.',',')+' €';
+spEl.textContent=soldes.postale.toFixed(2).replace('.',',')+' €';
+srEl.className='compte-solde'+(soldes.revolut<0?' negatif':'');
+spEl.className='compte-solde'+(soldes.postale<0?' negatif':'');
+['revolut','postale'].forEach(c=>{
+const card=document.getElementById('card-'+c);
+const ex=card.querySelector('.alerte-rouge');
+if(ex)ex.remove();
+if(soldes[c]<0){const al=document.createElement('div');al.className='alerte-rouge';al.textContent='⚠️ Découvert';card.appendChild(al);}
+});
+document.getElementById('dep-revolut-jour').textContent="Aujourd'hui : -"+fmtM(depR);
+document.getElementById('dep-postale-jour').textContent="Aujourd'hui : -"+fmtM(depP);
+const total=soldes.revolut+soldes.postale;
+document.getElementById('solde-total').textContent=total.toFixed(2).replace('.',',')+' €';
+document.getElementById('dep-total-jour').textContent='-'+fmtM(depR+depP)+' auj.';
+}
+function renderStats(){
+const now=new Date();
+const moisT=transactions.filter(t=>{const d=new Date(t.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()&&t.type==='debit';});
+const totalMois=moisT.reduce((s,t)=>s+t.montant,0);
+const max=moisT.reduce((m,t)=>t.montant>m.montant?t:m,{montant:0,desc:'—'});
+document.getElementById('stat-mois').textContent=totalMois.toFixed(2).replace('.',',')+' €';
+document.getElementById('stat-mois-nb').textContent=moisT.length+' transaction'+(moisT.length>1?'s':'');
+document.getElementById('stat-moy').textContent=(totalMois/Math.max(now.getDate(),1)).toFixed(2).replace('.',',')+' €';
+document.getElementById('stat-max').textContent=max.montant.toFixed(2).replace('.',',')+' €';
+document.getElementById('stat-max-desc').textContent=max.desc;
+const j7=Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return{label:['Di','Lu','Ma','Me','Je','Ve','Sa'][d.getDay()],date:d.toDateString()};});
+const vals=j7.map(j=>transactions.filter(t=>new Date(t.date).toDateString()===j.date&&t.type==='debit').reduce((s,t)=>s+t.montant,0));
+const maxV=Math.max(...vals,1);
+document.getElementById('bar-chart').innerHTML=vals.map((v,i)=>'<div class="bar-wrap"><div class="bar-val">'+(v>0?v.toFixed(0)+'€':'')+'</div><div class="bar" style="height:'+(v/maxV100)+'px"></div><div class="bar-label">'+j7[i].label+'</div></div>').join('');
+const catTotaux={};
+moisT.forEach(t=>{catTotaux[t.cat||'autre']=(catTotaux[t.cat||'autre']||0)+t.montant;});
+const catSort=Object.entries(catTotaux).sort((a,b)=>b[1]-a[1]);
+const maxCat=catSort[0]?catSort[0][1]:1;
+document.getElementById('cats-grid').innerHTML=catSort.length===0?'<p style="color:var(--tl);font-size:.85rem">Aucune dépense ce mois</p>':catSort.map(([k,v])=>{const c=CATS[k]||CATS.autre;return '<div class="cat-item"><div class="cat-emoji">'+c.emoji+'</div><div class="cat-info"><div class="cat-nom">'+c.label+'</div><div class="cat-montant">'+v.toFixed(2).replace('.',',')+' €</div><div class="cat-bar-bg"><div class="cat-bar-fill" style="width:'+(v/maxCat100)+'%"></div></div></div></div>';}).join('');
+const totR=transactions.filter(t=>t.compte==='revolut'&&t.type==='debit').reduce((s,t)=>s+t.montant,0);
+const totP=transactions.filter(t=>t.compte==='postale'&&t.type==='debit').reduce((s,t)=>s+t.montant,0);
+const tot=totR+totP||1;
+const pR=Math.round(totR/tot100),pP=Math.round(totP/tot100);
+document.getElementById('pct-revolut').textContent=pR+'%';
+document.getElementById('pct-postale').textContent=pP+'%';
+document.getElementById('bar-revolut').style.width=pR+'%';
+document.getElementById('bar-postale').style.width=pP+'%';
+}
+function toast(msg){
+const el=document.getElementById('toast');
+el.textContent=msg;el.classList.add('show');
+setTimeout(()=>el.classList.remove('show'),2800);
+}
+function renderAll(){renderComptes();renderListe('liste-transactions',filtre1);renderListe('liste-toutes',filtre2);}
+document.getElementById('modal-edit').addEventListener('click',e=>{if(e.target===e.currentTarget)fermerModal();});
+document.getElementById('modal-init').addEventListener('click',e=>{if(e.target===e.currentTarget)fermerInitModal();});
+const now2=new Date();
+const yyyy=now2.getFullYear(),mm=String(now2.getMonth()+1).padStart(2,'0'),dd=String(now2.getDate()).padStart(2,'0');
+document.getElementById('date-saisie').value=yyyy+'-'+mm+'-'+dd;
+document.getElementById('date-header').textContent=now2.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+renderAll();
+</script>
+</body>
+</html>
+
